@@ -1,0 +1,349 @@
+<html><head><base href="https://musicrelease.ru/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Форма отправки релиза</title>
+<style>
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: #fff;
+}
+.container {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  width: 100%;
+  max-width: 600px;
+}
+h1 {
+  color: #fff;
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+form {
+  display: flex;
+  flex-direction: column;
+}
+label {
+  margin-bottom: 8px;
+  color: #fff;
+  font-weight: 600;
+}
+input, textarea, select {
+  margin-bottom: 20px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+}
+input[type="file"] {
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 14px;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+button:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.error-message {
+  color: #ff6b6b;
+  font-size: 14px;
+  margin-top: -15px;
+  margin-bottom: 15px;
+}
+#coverPreview {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: none;
+}
+.track-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+.track-item input[type="text"], .track-item textarea {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.track-item audio {
+  width: 100%;
+}
+#releaseType {
+  transition: background-color 0.3s ease;
+}
+#releaseType.opened {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+#successMessage {
+  display: none;
+  background-color: rgba(76, 175, 80, 0.9);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 600;
+  animation: fadeIn 0.5s;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Отправка релиза</h1>
+  <form id="releaseForm">
+    <label for="artistName">Имя исполнителя(ей):</label>
+    <input type="text" id="artistName" name="artistName" required placeholder="Например: Артист1, Артист2">
+    
+    <label for="releaseName">Название релиза/альбома:</label>
+    <input type="text" id="releaseName" name="releaseName" required>
+    
+    <label for="releaseType">Тип релиза:</label>
+    <select id="releaseType" name="releaseType" required>
+      <option value="quick">Быстрый релиз</option>
+      <option value="scheduled">Запланированный релиз</option>
+    </select>
+    
+    <div id="scheduledRelease" style="display:none;">
+      <label for="releaseDate">Дата релиза:</label>
+      <input type="date" id="releaseDate" name="releaseDate">
+      <p class="error-message" id="dateError"></p>
+    </div>
+    
+    <label for="coverArt">Обложка релиза:</label>
+    <input type="file" id="coverArt" name="coverArt" accept="image/*" required>
+    <img id="coverPreview" alt="Предпросмотр обложки">
+    <p class="error-message" id="coverError"></p>
+    
+    <label for="wavFiles">WAV файлы релиза:</label>
+    <input type="file" id="wavFiles" name="wavFiles" accept=".wav" multiple required>
+    <div id="trackList"></div>
+    
+    <button type="submit">Отправить релиз</button>
+  </form>
+  <div id="successMessage">Ваш релиз отправлен на модерацию</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+  const form = document.getElementById('releaseForm');
+  const releaseType = document.getElementById('releaseType');
+  const scheduledRelease = document.getElementById('scheduledRelease');
+  const releaseDate = document.getElementById('releaseDate');
+  const dateError = document.getElementById('dateError');
+  const coverArt = document.getElementById('coverArt');
+  const coverPreview = document.getElementById('coverPreview');
+  const coverError = document.getElementById('coverError');
+  const wavFiles = document.getElementById('wavFiles');
+  const trackList = document.getElementById('trackList');
+  const successMessage = document.getElementById('successMessage');
+
+  releaseType.addEventListener('click', function() {
+    this.classList.add('opened');
+  });
+
+  releaseType.addEventListener('blur', function() {
+    this.classList.remove('opened');
+  });
+
+  releaseType.addEventListener('change', function() {
+    if (this.value === 'scheduled') {
+      scheduledRelease.style.display = 'block';
+      releaseDate.required = true;
+    } else {
+      scheduledRelease.style.display = 'none';
+      releaseDate.required = false;
+    }
+  });
+
+  releaseDate.addEventListener('change', function() {
+    const selectedDate = new Date(this.value);
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 7);
+    
+    if (selectedDate < minDate) {
+      dateError.textContent = 'Дата релиза должна быть не менее чем через 7 дней от текущей даты';
+      this.setCustomValidity('Invalid date');
+    } else {
+      dateError.textContent = '';
+      this.setCustomValidity('');
+    }
+  });
+
+  coverArt.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          if (this.width !== this.height) {
+            coverError.textContent = 'Обложка должна быть квадратной (соотношение сторон 1:1)';
+            coverPreview.style.display = 'none';
+          } else if (this.width < 3000 || this.height < 3000) {
+            coverError.textContent = 'Разрешение обложки должно быть не менее 3000x3000 пикселей';
+            coverPreview.style.display = 'none';
+          } else {
+            coverError.textContent = '';
+            coverPreview.src = e.target.result;
+            coverPreview.style.display = 'block';
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  wavFiles.addEventListener('change', function(e) {
+    trackList.innerHTML = '';
+    Array.from(e.target.files).forEach((file, index) => {
+      const trackItem = document.createElement('div');
+      trackItem.className = 'track-item';
+      trackItem.innerHTML = `
+        <input type="text" placeholder="Название трека" required>
+        <input type="text" placeholder="Исполнители трека" required>
+        <textarea placeholder="Текст трека" rows="4"></textarea>
+        <audio controls>
+          <source src="${URL.createObjectURL(file)}" type="audio/wav">
+          Ваш браузер не поддерживает элемент audio.
+        </audio>
+      `;
+      trackList.appendChild(trackItem);
+    });
+  });
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const artistName = formData.get('artistName');
+    const releaseName = formData.get('releaseName');
+    const releaseTypeValue = formData.get('releaseType');
+    const releaseDateValue = formData.get('releaseDate');
+    const coverArtFile = formData.get('coverArt');
+    const wavFilesArray = formData.getAll('wavFiles');
+
+    let message = `📩 Новый релиз на модерации:\n`;
+    message += `<b>Имя исполнителя:</b> ${artistName}\n`;
+    message += `<b>Название релиза:</b> ${releaseName}\n`;
+    message += `<b>Тип релиза:</b> ${releaseTypeValue === 'quick' ? 'Быстрый релиз' : 'Запланированный релиз'}\n`;
+    if (releaseTypeValue === 'scheduled') {
+      message += `<b>Дата релиза:</b> ${releaseDateValue}\n`;
+    }
+
+    const botToken = '5804359290:AAEfQ3pZ8P7ZE8ylxScIaEcKj1Z1l1QEYj8';
+    const chatId = '218957780';
+    const apiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message to Telegram');
+      }
+
+      const formDataCover = new FormData();
+      formDataCover.append('chat_id', chatId);
+      formDataCover.append('document', coverArtFile);
+      await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+        method: 'POST',
+        body: formDataCover,
+      });
+
+      const trackItems = document.querySelectorAll('.track-item');
+      for (let i = 0; i < wavFilesArray.length; i++) {
+        const trackName = trackItems[i].querySelector('input:nth-child(1)').value;
+        const trackArtists = trackItems[i].querySelector('input:nth-child(2)').value;
+        const trackLyrics = trackItems[i].querySelector('textarea').value;
+
+        let trackInfo = `🎵 <b>${trackName}</b>\n\n` +
+                        `Исполнители: ${trackArtists}\n`;
+        
+        if (trackLyrics) {
+          trackInfo += `\nТекст:\n${trackLyrics}`;
+        }
+
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: trackInfo,
+            parse_mode: 'HTML',
+          }),
+        });
+
+        const formDataTrack = new FormData();
+        formDataTrack.append('chat_id', chatId);
+        formDataTrack.append('document', wavFilesArray[i]);
+        await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+          method: 'POST',
+          body: formDataTrack,
+        });
+      }
+
+      successMessage.style.display = 'block';
+      form.style.display = 'none';
+      successMessage.scrollIntoView({behavior: 'smooth'});
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Произошла ошибка при отправке данных. Пожалуйста, попробуйте еще раз.');
+    }
+  });
+});
+</script>
+</body></html>
